@@ -1,221 +1,141 @@
-# Hugo Award Books Database - Student Instructions
+# Hugo Award Books Explorer - Student Instructions
 
-## Exam Overview
+## Exam Details
+
 **Duration:** 2 hours  
-**Total Points:** 100 (+ 25 bonus points available)  
-**Passing Grade:** 60%  
-**Tools Allowed:** All online resources, LLMs (ChatGPT, Claude, etc.), documentation, Stack Overflow
+**Tools Allowed:**
+- All online resources
+- AI assistants (ChatGPT, GitHub Copilot, etc.)
+- Official documentation
+- Stack Overflow
 
-## What You're Building
-Create a web application that displays and filters Hugo Award nominated and winning books from 1953-2025. Think of it as a searchable database interface for science fiction and fantasy literature.
-
-## Files Provided
-- `hugo-books-exam.json` - Your data source (24 books with edge cases)
-- `hugo-books-exam-specification.md` - Detailed requirements  
-- This instruction file
+**Submission Format:**
+- Pull request to the provided repository
+- Required files: `index.html`, `script.js`, `styles.css`
 
 ## Getting Started
 
-### 1. Download the Files
-- Save `hugo-books-exam.json` in your project folder
-- This contains 24 carefully selected books with various edge cases
+1. **Download Repository**
+   - Starter template
+   - Test data file
+   - Exam specification
 
-### 2. Basic Project Structure
-Create these files:
-```
-your-project/
-├── index.html
-├── styles.css (optional - can embed in HTML)
-├── script.js (optional - can embed in HTML)
-└── hugo-books-exam.json
-```
+2. **Review Requirements**
+   - Read the specification carefully
+   - Note the tiered requirements structure
+   - Identify edge cases to handle
 
-### 3. Minimum Requirements (60% Grade)
-To pass, your application must:
-- Display books in a table with all required columns
-- Allow sorting by clicking column headers  
-- Have a text filter for book titles
-- Handle the provided data without crashing
+3. **Plan Your Approach**
+   - Start with basic functionality (Tier 1)
+   - Test edge cases early
+   - Choose advanced features wisely
 
-## Strategy for Success
+## Development Tips
 
-### Phase 1: Get the Basics Working (45 minutes)
-1. **HTML Structure**
-   - Create a table with proper headers
-   - Add a text input for filtering
-   - Include a loading message
+### 1. Focus on Core Features First
+- ✅ Data loading and display
+- ✅ Basic table structure
+- ✅ Simple sorting
+- ✅ Name filtering
 
-2. **Load Data**
-   - Fetch from `hugo-books-exam.json`
-   - Display in table rows
-   - Test that all 24 books appear
+### 2. Test Edge Cases Early
+- Nested award object extraction
+- Books with `series: false`
+- Empty genres arrays
+- Special characters
+- Long titles
 
-3. **Basic Filtering**
-   - Connect text input to filter function
-   - Filter by title (case-insensitive)
+### 3. Effective AI Usage
+- Ask for explanations, not just code
+- Verify generated code works
+- Test edge cases thoroughly
+- Understand the code you use
 
-### Phase 2: Add Sorting (30 minutes)
-1. **Click Handlers**
-   - Add click events to table headers
-   - Implement toggle ascending/descending
-
-2. **Sort Functions**
-   - Handle text columns (title, author, publisher)
-   - Handle number columns (year)
-   - Handle boolean columns (is_winner)
-
-### Phase 3: Handle Edge Cases (30 minutes)
-Focus on the test data edge cases:
-1. **Series Display**
-   - Books with `"series": false` should show "None"
-   - Books with series names show the actual name
-
-2. **Genres Display**
-   - Empty arrays `[]` should show "None"  
-   - Multiple genres should be comma-separated
-
-3. **Special Characters**
-   - Titles with quotes, apostrophes must display correctly
-   - Long titles shouldn't break your layout
-
-### Phase 4: Advanced Features (15 minutes)
-Choose any advanced features to boost your grade:
-- Performance optimization for large datasets
-- Multi-column sorting
-- Additional filters (winner/nominee, decade, etc.)
-- Smart search with relevance ranking
-
-## Important Test Cases
-Your application will be tested with these specific books from the dataset:
-
-**Edge Case Books:**
-- `"The \"Impossible\" Book"` - Has quotes in title
-- `"Empty Genre Book"` - Has empty genres array `[]`
-- Books with `"series": false` - Should show "None"
-- `"Book with 'Apostrophes' & Special-Characters..."` - Long title with special chars
-
-**Normal Books:**
-- `"Dune"` - Classic with series and multiple genres
-- `"Neuromancer"` - Winner with series
-- Various nominees and winners from different decades
-
-## Tips for Using LLMs Effectively
-
-### Good Prompts:
-```
-"Create a JavaScript function that sorts an array of book objects by title, 
-handling case-insensitive sorting"
-
-"How do I filter an array of objects in JavaScript where the title contains 
-a search term, ignoring case?"
-
-"Show me how to handle JSON data where some objects have series: false 
-and display 'None' instead"
-```
-
-### What to Ask For:
-- Specific functions for sorting and filtering
-- HTML table structure examples
-- CSS for responsive tables
-- Error handling for fetch requests
-
-### What NOT to Ask For:
-- "Build the entire exam for me"
-- Complete solutions without understanding
-
-## Common Pitfalls to Avoid
-
-1. **Showing "false" instead of "None"**
-   ```javascript
-   // Wrong:
-   cell.textContent = book.series;
-   
-   // Right:
-   cell.textContent = book.series === false ? "None" : book.series;
-   ```
-
-2. **Case-sensitive filtering**
-   ```javascript
-   // Wrong:
-   books.filter(book => book.title.includes(searchTerm))
-   
-   // Right:
-   books.filter(book => book.title.toLowerCase().includes(searchTerm.toLowerCase()))
-   ```
-
-3. **Not handling empty arrays**
-   ```javascript
-   // Wrong:
-   cell.textContent = book.genres.join(", ");
-   
-   // Right:
-   cell.textContent = book.genres.length > 0 ? book.genres.join(", ") : "None";
-   ```
+### 4. Common Pitfalls
+- ❌ Not testing with real data
+- ❌ Ignoring error handling
+- ❌ Leaving console errors
+- ❌ Untested edge cases
 
 ## Testing Your Solution
 
-### Manual Testing Checklist:
-- [ ] All 24 books display in table
-- [ ] Click each column header to sort
-- [ ] Try sorting both ascending and descending
-- [ ] Search for "Dune" - should find the book
-- [ ] Search for "impossible" - should find the edge case book
-- [ ] Check that series shows "None" for books with `series: false`
-- [ ] Check that empty genres show "None"
-- [ ] Verify long titles don't break the layout
+### Basic Functionality
+1. Data loads without errors
+2. Table displays correctly
+3. Sorting works on all columns
+4. Filtering updates results
 
-### Browser Console:
-- Open Developer Tools (F12)
-- Check for any red error messages
-- Fix any JavaScript errors before submitting
+### Edge Cases
+1. Load the test data file
+2. Check award formatting ("2025 Winner" vs "2025 Nominee")
+3. Try filtering special characters
+4. Sort years and titles
+5. Check null value handling
 
-## Submission Requirements
-
-### File Format:
-- **Single HTML file** (easiest) OR separate HTML/CSS/JS files
-- Must work when opened locally in a browser
-- No build process required (npm, webpack, etc.)
-
-### What to Include:
-- Working code that loads the provided JSON data
-- Basic styling (doesn't need to be fancy)
-- Comments explaining any complex logic
-- All files needed to run your solution
-
-### What NOT to Include:
-- node_modules folders
-- Build tools or configuration files
-- External dependencies (except CDN links are OK)
+### Performance
+1. Table remains responsive
+2. Filters update smoothly
+3. Sorting is efficient
+4. No UI freezing
 
 ## Grading Philosophy
 
-**Remember:** This exam tests your ability to:
-1. Work with real-world messy data
-2. Handle edge cases gracefully  
-3. Use online resources effectively
-4. Write maintainable code
+### Points Distribution
+- **Tier 1 (60%):** Basic functionality
+  - Achievable with AI assistance
+  - Must work reliably
+  
+- **Tier 2 (25%):** Edge cases
+  - Shows understanding
+  - Requires testing
+  
+- **Tier 3 (15%):** Advanced features
+  - Demonstrates problem-solving
+  - Choose features you understand
 
-**60% (Pass):** Basic functionality works
-**85% (Good):** Edge cases handled well
-**100% (Excellent):** Advanced features implemented
+### Evaluation Focus
+- Working code > perfect code
+- Handle errors gracefully
+- Show attention to detail
+- Demonstrate understanding
 
-## Time Management
+### Point Deductions
+- Console errors (-5)
+- Crashes (-10)
+- Missing features (-15)
 
-| Time | Focus |
-|------|-------|
-| 0-15 min | Read requirements, set up files, plan approach |
-| 15-60 min | Core functionality: table, data loading, basic filter |
-| 60-90 min | Sorting implementation |
-| 90-105 min | Edge case handling |
-| 105-120 min | Advanced features, testing, cleanup |
+## Submission Checklist
 
-## Final Advice
+- [ ] All required files included
+- [ ] Files properly named
+- [ ] No external dependencies
+- [ ] Works offline/locally
+- [ ] Test data handling verified
+- [ ] No console errors
+- [ ] Edge cases tested
+- [ ] Code is readable
+- [ ] Comments explain complex logic
+- [ ] Advanced features documented
 
-1. **Start Simple:** Get basic functionality working first
-2. **Test Early:** Load data and display it before adding features
-3. **Use Resources:** LLMs and documentation are your friends
-4. **Focus on Requirements:** Don't over-engineer
-5. **Handle Edge Cases:** They're worth significant points
-6. **Comment Your Code:** Especially complex logic
+## Final Reminders
 
-Good luck! Remember, working code that handles the basic requirements well is much better than ambitious code that doesn't work.
+1. **Time Management**
+   - 60 minutes: Basic features
+   - 30 minutes: Edge cases
+   - 30 minutes: Advanced features
+
+2. **Testing Strategy**
+   - Test frequently
+   - Use browser console
+   - Try edge cases
+   - Verify all features
+
+3. **Code Quality**
+   - Clear variable names
+   - Good commenting
+   - Consistent formatting
+   - Error handling
+
+Remember: Working basic features are better than broken advanced ones. Focus on reliability first, then add complexity if time allows.
+
+Good luck!

@@ -1,188 +1,246 @@
-# Hugo Award Books Database Exam Specification
+# Hugo Award Books Explorer - Exam Specification
 
 ## Overview
-Create a web application that displays and filters Hugo Award nominated and winning books from 1953 to 2025. Students will implement table display, sorting, filtering, and handle various data edge cases.
 
-**Duration:** 2 hours  
-**Tools Allowed:** All online resources, LLMs, documentation  
-**Data Source:** `hugo-books-exam.json` (provided)
+Build an interactive web application for exploring Hugo Award nominated and winning books with sorting, filtering, and data display capabilities. The application should handle edge cases gracefully and provide options for advanced features.
 
-## Tier 1 Requirements (60 points - Basic Functionality)
+## Requirements
 
-### Core Display (25 points)
-- Display books in a table with the following columns:
-  - Title
-  - Author
-  - Year (Hugo award year)
-  - Winner/Nominee status 
-  - Publisher
-  - Series (display "None" for books with `series: false`)
-  - Genres (display as comma-separated list)
+### Tier 1: Basic Functionality (60 points)
 
-### Sorting (20 points)
-- Single-column sorting (ascending/descending toggle)
-- Must work correctly for:
-  - Text fields (title, author, publisher)
-  - Numeric fields (year)
-  - Boolean-like fields (winner status)
-  - Array fields (genres - sort by first genre)
+#### Book Display Table (35 points)
 
-### Filtering (10 points)
-- Text filter for book title (case-insensitive contains match)
-- Filter should work in real-time as user types
+Display books in a table with the following columns:
 
-### Loading and Error States (5 points)
+- Title (text)
+- Author (text)
+- Award (format: "YYYY Winner" or "YYYY Nominee", extracted from nested `award` object)
+- Publisher (text)
+- Series (text or "None" for `series: false`)
+- Genres (comma-separated list)
+
+**Award Column Requirements:**
+- Extract year from `award.year`
+- Extract winner status from `award.is_winner`
+- Format as: `"2025 Winner"` if `is_winner` is `true`
+- Format as: `"2025 Nominee"` if `is_winner` is `false`
+- Sort by year when clicking Award column header
+
+#### Data Loading (15 points)
+
+- Fetch book data from the provided JSON endpoint
+
+  - Alternative 1: use the URL: https://raw.githubusercontent.com/sweko/internet-programming-adefinater/refs/heads/preparation/dry-run/data/hugo_books.json
+  - Alternative 2: **(negative 10 points for using this option)** - use a local file named `hugo_books.json` placed in the same directory as your HTML file
+
 - Show loading indicator while data is being fetched
-- Display appropriate error message if data fails to load
+- Handle network errors gracefully
+- Display error message if fetch fails
 
-## Tier 2 Requirements (25 points - Edge Case Handling)
+#### Basic Interaction (10 points)
 
-### Data Edge Cases (15 points)
-- Handle books with `series: false` gracefully (display "None" or "—")
-- Handle books with empty genres arrays (display "None" or "—")
-- Handle books with multiple genres properly (display all genres)
-- Handle very long book titles that might overflow table cells
-- Handle special characters in titles, authors, and publishers (quotes, apostrophes, hyphens)
+- Implement single-column sorting (toggle ascending/descending)
+- Add case-insensitive name filter (partial match)
+- Show/hide loading states appropriately
 
-### Advanced Filtering (10 points)
-- Handle filtering with no results (show "No books match your criteria")
-- Ensure filter works correctly with the edge cases above
-- Filter should be case-insensitive and handle partial matches
+### Tier 2: Edge Case Handling (25 points)
 
-## Tier 3 Requirements (15 points - Advanced Features)
-**Students must implement 2 of the following 4 options (choose any 2 for full credit):**
+#### Data Robustness (15 points)
 
-### Option 1: Performance Optimization (7.5 points)
-- Implement virtual scrolling or pagination for large datasets (700+ books)
-- Page must remain responsive with all books loaded
-- Include comment explaining optimization strategy
+- Extract and format award information from nested object (5 points)
+- Handle `series: false` values (3 points)
+- Process empty genres arrays correctly (3 points)
+- Display multiple genres properly (2 points)
+- Handle long book titles (2 points)
 
-### Option 2: Multi-Column Sorting (7.5 points)
-- Allow sorting by multiple columns (Shift+click to add secondary sort)
-- Visual indicators showing sort order and priority
-- Proper handling of null/undefined values in sort
+#### Display Formatting (10 points)
 
-### Option 3: Advanced Filtering (7.5 points)
-- Add dropdown filters for:
-  - Winner/Nominee status
-  - Decade (1950s, 1960s, 1970s, etc.)
-  - Has Series (Yes/No filter for books with/without series)
-- All filters should work together (AND logic)
+- Render special characters in titles correctly (4 points)
+- Format error messages clearly (3 points)
+- Handle missing/null values gracefully (3 points)
 
-### Option 4: Smart Search with Relevance (7.5 points)
-- When text filter is active, sort results by relevance:
-  - Exact title match first
-  - Title starts with search term second
-  - Title contains search term third
-  - Author contains search term fourth
-  - Any other field contains search term last
-- Include relevance score indicator
+### Tier 3: Advanced Features (Choose 2, 15 points total)
 
-## Bonus Tasks (25 points total - Optional)
-**Each bonus task is worth 5 points:**
+#### 1. Performance Optimization (5 points)
 
-1. **Export Functionality**: Export filtered results to CSV format
-2. **Genre Filter**: Multi-select dropdown for filtering by genres
-3. **Year Range Filter**: Slider or dual input for filtering by year range  
-4. **Author Filter**: Dropdown populated from unique authors in dataset
-5. **Publisher Filter**: Dropdown populated from unique publishers in dataset
+- Implement strategies for handling 1000+ books
+- Document optimization approach in comments
+- Options: virtualization, pagination, debouncing
+
+#### 2. Keyboard Navigation (5 points)
+
+- Arrow keys: Navigate table rows
+- Enter: Sort by focused column
+- Tab/Shift+Tab: Move between filters
+- Visual feedback for current focus
+
+#### 3. Smart Relevance Sort (5 points)
+
+When filtering, sort results by:
+
+1. Exact title matches
+2. Title contains search term
+3. Any field contains search term
+4. Default year order
+
+#### 4. Data Validation (5 points)
+
+- Log console warnings for:
+  - Missing required fields
+  - Future publication years
+  - Duplicate IDs
+  - Invalid winner status values
+- Display warning count in UI
+
+### Bonus Features (5 points each, optional)
+
+1. **Multi-column Sort**
+
+   - Shift+click to add sort levels
+   - Visual indicators for sort order
+
+2. **Enhanced Filters**
+
+   - Winner/Nominee dropdown filter
+   - Decade dropdown (1950s, 1960s, etc.)
+   - Author filter (populated from data)
+
+3. **Export Functionality**
+
+   - Export filtered results as CSV
+   - Include all visible columns
+   - Proper string escaping
+
+4. **Genre Grouping**
+   - Group books by primary genre
+   - Collapsible genre sections
+   - Book count per genre
+
+## Technical Requirements
+
+### Browser Support
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+
+### Code Quality
+
+- Use modern JavaScript (ES6+)
+- Clear variable/function names
+- Comments for complex logic
+- Consistent code formatting
+- Error handling with try-catch
+
+### Development Constraints
+
+- Vanilla JavaScript (no frameworks)
+- No build process required
+- CDN resources allowed
+- Local browser testing
+- No external dependencies beyond CDN
+
+## Test Data Handling
+
+### Edge Cases to Handle
+
+1. Books with `series: false`
+2. Empty genres arrays
+3. Multiple genres per book
+4. Special characters in titles
+5. Long titles
+6. Invalid/suspicious data entries
+7. Nested award object extraction
+
+### Error Scenarios
+
+1. Network fetch failures
+2. Invalid JSON data
+3. Missing required fields
+4. Malformed data values
 
 ## Data Structure
-Each book object contains:
+
+Each book object in the JSON contains:
+
 ```json
 {
   "id": "12345",
   "title": "Book Title",
-  "author": "Author Name", 
-  "year": 2023,
-  "is_winner": true,
+  "author": "Author Name",
+  "award": {
+    "year": 2025,
+    "category": "Best Novel",
+    "is_winner": true
+  },
   "publisher": "Publisher Name",
   "series": "Series Name" | false,
-  "genres": ["Genre1", "Genre2"] | [],
-  "url": "https://worldswithoutend.com/novel.asp?id=12345"
+  "genres": ["Genre1", "Genre2"] | []
 }
 ```
 
-## Grading Rubric
-
-### Tier 1 (60 points)
-- **Table Display (25 points)**
-  - All required columns: 15 points
-  - Proper data formatting: 5 points
-  - Responsive layout: 5 points
-
-- **Sorting (20 points)**
-  - Single column sort works: 12 points
-  - Toggle ascending/descending: 5 points
-  - Handles all data types: 3 points
-
-- **Filtering (10 points)**
-  - Text filter functional: 7 points
-  - Real-time filtering: 3 points
-
-- **Loading/Error States (5 points)**
-  - Loading indicator: 3 points
-  - Error handling: 2 points
-
-### Tier 2 (25 points)
-- **Edge Case Handling (15 points)**
-  - Series false handling: 4 points
-  - Empty genres handling: 3 points
-  - Multiple genres display: 3 points
-  - Long titles handling: 3 points
-  - Special characters: 2 points
-
-- **Advanced Filtering (10 points)**
-  - No results state: 5 points
-  - Case-insensitive matching: 3 points
-  - Edge case compatibility: 2 points
-
-### Tier 3 (15 points)
-- Each chosen advanced feature: 7.5 points
-- Partial credit for attempted but incomplete features
-
-### Bonus (25 points)
-- Each bonus feature: 5 points
-
-## Deductions
-- Console errors on page load: -5 points
-- Application crashes on any interaction: -10 points
-- Code doesn't run without modification: -15 points
-- Missing basic HTML structure/CSS: -5 points
-
-## Test Data Characteristics
-The provided dataset contains approximately 700 Hugo-nominated books with these intentional edge cases:
-
-- **Series Data**: ~40% have `series: false`, ~60% have actual series names
-- **Genres**: ~5% have empty genre arrays, most have 2-4 genres
-- **Special Characters**: Titles with quotes, apostrophes, colons, parentheses
-- **Long Titles**: Some titles exceed 50 characters
-- **Year Range**: Spans from 1953 to 2025
-- **Winner Distribution**: ~20% winners, ~80% nominees
-- **Publisher Variety**: Over 100 different publishers
-- **Author Variety**: Over 400 unique authors
-
-## Success Criteria
-- **60% (Tier 1)**: Basic table with sorting and filtering - achievable with LLM help
-- **85% (Tiers 1+2)**: Requires testing and understanding of edge cases
-- **100% (All Tiers)**: Demonstrates advanced JavaScript skills and problem-solving
+**Important Notes:**
+- `award` is a nested object with three properties
+- `award.year` is a number representing the Hugo Award year
+- `award.is_winner` is a boolean (true for winners, false for nominees)
+- `award.category` is typically "Best Novel" but may vary
+- Must extract and format: `"{year} Winner"` or `"{year} Nominee"`
 
 ## Submission Requirements
-- Single HTML file with embedded CSS/JavaScript OR separate files
-- All files must work when opened locally in a browser
-- No external build process required (CDN libraries allowed)
-- Include brief comments explaining any complex logic
-- Test with the provided dataset before submission
 
-## Implementation Notes
-- Use modern JavaScript (ES6+) features appropriately
-- Ensure accessibility with proper ARIA labels
-- Consider mobile responsiveness
-- Focus on code readability and maintainability
-- Performance matters - test with the full dataset
+### Required Files
 
-## Academic Integrity
-- Use of LLMs and online resources is encouraged
-- Understand and be able to explain any code you submit
-- Test thoroughly with edge cases before submission
-- Document any external libraries or resources used
+1. index.html
+2. script.js
+3. styles.css
+
+### File Organization
+
+- Clean directory structure
+- Logical file organization
+- No extraneous files
+
+### Code Documentation
+
+- Clear code comments
+- Function documentation
+- Edge case handling notes
+
+## Grading Focus
+
+### Critical Aspects
+
+1. Core functionality works
+2. Edge cases handled gracefully
+3. No console errors on load
+4. Responsive user interface
+5. Code readability
+
+### Automatic Deductions
+
+- Console errors (-5 points)
+- Crashes on interaction (-10 points)
+- Incomplete implementation (-15 points)
+
+## Testing Guidelines
+
+### Functional Testing
+
+1. Data loads and displays
+2. Sorting works correctly
+3. Filtering is accurate
+4. Edge cases render properly
+
+### Performance Testing
+
+1. Large dataset handling
+2. Filter response time
+3. Sort operation speed
+4. Memory usage
+
+### Edge Case Testing
+
+1. Null values
+2. Special characters
+3. Invalid data
+4. Network errors
