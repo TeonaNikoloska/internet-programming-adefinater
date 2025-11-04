@@ -1,153 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doctor Who Episodes Explorer</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Who Episodes Explorer</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div class="container">function displayEpisodes(episodes) {
-    const tbody = document.getElementById('episodes-body');
-    const table = document.getElementById('episodes-table');
-    const noResults = document.getElementById('no-results');
-
-    tbody.innerHTML = ''; // Clear old data
-
-    if (!episodes.length) {
-        table.style.display = 'none';
-        noResults.style.display = 'block';
-        return;
-    }
-
-    noResults.style.display = 'none';
-    table.style.display = 'table';
-
-    for (const ep of episodes) {
-        const tr = document.createElement('tr');
-
-        tr.innerHTML = `
-            <td>${ep.rank}</td>
-            <td>${ep.title}</td>
-            <td>${ep.series}</td>
-            <td>${ep.era}</td>
-            <td>${new Date(ep.broadcast_date).getFullYear()}</td>
-            <td>${ep.director}</td>
-            <td>${ep.writer}</td>
-            <td>${ep.doctor}</td>
-            <td>${ep.companion}</td>
-            <td><span class="cast-count">${ep.cast.length}</span></td>
-        `;
-
-        tbody.appendChild(tr);
-    }
-}
-
-        <header>
-            <h1>Doctor Who Episodes Explorer</h1>
-            <p>Explore episodes through time and space</p>
-        </header>
-
-        <!-- Filter Section -->
-        <section class="filters">
-            <div class="filter-group">
-                <label for="name-filter">Episode Name:</label>
-                <input type="text" id="name-filter" placeholder="Search episodes...">
-            </div>
-           function setupEventListeners() {
-    const nameInput = document.getElementById('name-filter');
-    nameInput.addEventListener('input', filterEpisodes);
-}
-
-function filterEpisodes() {
-    const query = document.getElementById('name-filter').value.toLowerCase();
-    state.filters.name = query;
-
-    state.filtered = state.episodes.filter(ep =>
-        ep.title.toLowerCase().includes(query)
-    );
-
-    displayEpisodes(state.filtered);
-}
-
-
-        </section>
-
-        <!-- Main Content -->
-        <main>
-            <!-- Loading State -->
-            <div id="loading" class="loading">
-                Loading episodes...
-            </div>
-
-            <!-- Error Display -->
-            <div id="error" class="error" style="display: none;">
-                <!-- Error messages will be inserted here -->
-            </div>
-
-            <!-- Episodes Table -->
-            <table id="episodes-table" style="display: none;">
-                <thead>
-                    <tr>
-                        <th data-sort="rank">Rank</th>
-                        <th data-sort="title">Title</th>
-                        <th data-sort="series">Series</th>
-                        <th data-sort="era">Era</th>
-                        <th data-sort="broadcast_date">Year</th>
-                        <th data-sort="director">Director</th>
-                        <th data-sort="writer">Writer</th>
-                        <th data-sort="doctor">Doctor</th>
-                        <th data-sort="companion">Companion</th>
-                        <th data-sort="cast">Cast</th>
-                    </tr>
-                </thead>
-                <tbody id="episodes-body">
-                  function displayEpisodes(episodes) {
-    const tbody = document.getElementById('episodes-body');
-    const table = document.getElementById('episodes-table');
-    const noResults = document.getElementById('no-results');
-
-    tbody.innerHTML = ''; // Clear old data
-
-    if (!episodes.length) {
-        table.style.display = 'none';
-        noResults.style.display = 'block';
-        return;
-    }
-
-    noResults.style.display = 'none';
-    table.style.display = 'table';
-
-    for (const ep of episodes) {
-        const tr = document.createElement('tr');
-
-        tr.innerHTML = `
-            <td>${ep.rank}</td>
-            <td>${ep.title}</td>
-            <td>${ep.series}</td>
-            <td>${ep.era}</td>
-            <td>${new Date(ep.broadcast_date).getFullYear()}</td>
-            <td>${ep.director}</td>
-            <td>${ep.writer}</td>
-            <td>${ep.doctor}</td>
-            <td>${ep.companion}</td>
-            <td><span class="cast-count">${ep.cast.length}</span></td>
-        `;
-
-        tbody.appendChild(tr);
-    }
-}
-
-                </tbody>
-            </table>
-
-            <!-- No Results Message -->
-            <div id="no-results" class="no-results" style="display: none;">
-                No episodes match your search criteria.
-            </div>
-        </main>
+  <header>
+    <h1>Doctor Who Episodes Explorer</h1>
+    <div class="filters">
+      <label for="name-filter">Episode Name:</label>
+      <input
+        type="text"
+        id="name-filter"
+        placeholder="Search episodes..."
+        aria-label="Filter episodes by name"
+      />
     </div>
+  </header>
 
-    <script src="script.js"></script>
+  <!-- Loading indicator -->
+  <div id="loading" style="display:none;">
+    <p>Loading episodes…</p>
+  </div>
+
+  <!-- Error message -->
+  <div id="error" class="error" style="display:none;"></div>
+
+  <!-- No results message -->
+  <div id="no-results" style="display:none;">
+    <p>No episodes found.</p>
+  </div>
+
+  <!-- Episodes table -->
+  <table id="episodes-table" style="display:none;">
+    <thead>
+      <tr>
+        <th data-sort="rank">Rank</th>
+        <th data-sort="title">Title</th>
+        <th data-sort="series">Series</th>
+        <th data-sort="era">Era</th>
+        <th data-sort="broadcast_date">Broadcast Year</th>
+        <th data-sort="director">Director</th>
+        <th data-sort="writer">Writer</th>
+        <th data-sort="doctor">Doctor</th>
+        <th data-sort="companion">Companion</th>
+        <th data-sort="cast">Cast Count</th>
+      </tr>
+    </thead>
+    <tbody id="episodes-body">
+      <!-- rows will be added here by script.js -->
+    </tbody>
+  </table>
+
+  <script src="script.js"></script>
 </body>
 </html>

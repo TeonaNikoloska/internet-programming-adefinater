@@ -1,49 +1,58 @@
-// Configuration
+
+
 const CONFIG = {
-  DATA_URL:
-    "https://raw.githubusercontent.com/sweko/internet-programming-adefinater/refs/heads/preparation/data/doctor-who-episodes-full.json",
+  DATA_URLS: [
+    "https://raw.githubusercontent.com/sweko/internet-programming-adefinater/refs/heads/preparation/data/doctor-who-episodes-01-10.json",
+    "https://raw.githubusercontent.com/sweko/internet-programming-adefinater/refs/heads/preparation/data/doctor-who-episodes-11-20.json",
+    "https://raw.githubusercontent.com/sweko/internet-programming-adefinater/refs/heads/preparation/data/doctor-who-episodes-21-30.json",
+    "https://raw.githubusercontent.com/sweko/internet-programming-adefinater/refs/heads/preparation/data/doctor-who-episodes-31-40.json",
+    "https://raw.githubusercontent.com/sweko/internet-programming-adefinater/refs/heads/preparation/data/doctor-who-episodes-41-50.json",
+    "https://raw.githubusercontent.com/sweko/internet-programming-adefinater/refs/heads/preparation/data/doctor-who-episodes-51-65.json"
+  ],
   FILTER_DEBOUNCE_MS: 250,
 };
 
-// State Management
+// ---------------------- STATE ----------------------
 let state = {
   episodes: [],
   filtered: [],
-  sort: [{ field: "rank", ascending: true }],
-  filters: {
-    name: "",
-    era: "all",
-    doctor: "all",
-  },
-  warnings: [],
-  collapsedDecades: new Set(),
+  sortLevels: [], // [{field, ascending}]
+  filters: { name: "", era: "", doctor: "" },
+  collapsedDecades: new Set()
 };
 
-// DOM cache
-const refs = {};
+// ---------------------- DOM REFS ----------------------
+const refs = {
+  table: null,
+  tbody: null,
+  loading: null,
+  error: null,
+  noResults: null,
+  nameFilter: null,
+  eraFilter: null,
+  doctorFilter: null,
+  exportBtn: null,
+};
 
-// ---------------------- Initialization ----------------------
-document.addEventListener("DOMContentLoaded", init);
-
-async function init() {
-  refs.loading = document.getElementById("loading");
-  refs.error = document.getElementById("error");
+// ---------------------- INIT ----------------------
+document.addEventListener("DOMContentLoaded", async () => {
   refs.table = document.getElementById("episodes-table");
   refs.tbody = document.getElementById("episodes-body");
+  refs.loading = document.getElementById("loading");
+  refs.error = document.getElementById("error");
   refs.noResults = document.getElementById("no-results");
   refs.nameFilter = document.getElementById("name-filter");
 
-  injectFilters();
-  injectExportButton();
-  injectWarningBadge();
-  setupEventListeners();
-  await loadEpisodes();
-}
+  // Inject extra filters + export button
+  injectExtraFilters();
 
-// ---------------------- UI Helpers ----------------------
+  await loadEpisodes();
+  setupEventListeners();
+});
+
+// ---------------------- UI HELPERS ----------------------
 function showLoading(show) {
   refs.loading.style.display = show ? "block" : "none";
-  refs.table.style.display = show ? "none" : "table";
 }
 
 function showError(msg) {
@@ -51,162 +60,25 @@ function showError(msg) {
   refs.error.style.display = msg ? "block" : "none";
 }
 
-function setWarningCount(n) {
-  const badge = document.getElementById("warnings-badge");
-  badge.textContent = n > 0 ? `Warnings: ${n}` : "";
-  badge.style.display = n > 0 ? "inline-block" : "none";
-}
-
-function injectWarningBadge() {
-  const header = document.querySelector("header h1");
-  const badge = document.createElement("div");
-  badge.id = "warnings-badge";
-  badge.style.display = "none";
-  badge.style.margin = "8px auto 0";
-  badge.style.background = "#fff5f5";
-  badge.style.border = "1px solid #f5c6cb";
-  badge.style.color = "#721c24";
-  badge.style.padding = "5px 10px";
-  badge.style.borderRadius = "8px";
-  badge.style.width = "fit-content";
-  badge.style.fontSize = "0.9em";
-  header.insertAdjacentElement("afterend", badge);
-}
-
-// ---------------------- Filters & Export ----------------------
-function injectFilters() {
-  const filterContainer = document.querySelector(".filters");
-
-  // Era dropdown
-  const eraGroup = document.createElement("div");
-  eraGroup.className = "filter-group";
-  eraGroup.innerHTML = `
-    <label for="era-filter">Era:</label>
-    <select id="era-filter">
-      <option value="all">All Eras</option>
-    </select>
-  `;
-
-  // Doctor dropdown
-  const doctorGroup = document.createElement("div");
-  doctorGroup.className = "filter-group";
-  doctorGroup.innerHTML = `
-    <label for="doctor-filter">Doctor:</label>
-    <select id="doctor-filter">
-      <option value="all">All Doctors</option>
-    </select>
-  `;
-
-  filterContainer.appendChild(eraGroup);
-  filterContainer.appendChild(doctorGroup);
-
-  refs.eraFilter = document.getElementById("era-filter");
-  refs.doctorFilter = document.getElementById("doctor-filter");
-}
-
-function injectExportButton() {
-  const filterContainer = document.querySelector(".filters");
-  const exportBtn = document.createElement("button");
-  exportBtn.textContent = "Export CSV";
-  exportBtn.style.marginLeft = "10px";
-  exportBtn.style.padding = "8px 14px";
-  exportBtn.style.border = "none";
-  exportBtn.style.background = "#2a5298";
-  exportBtn.style.color = "white";
-  exportBtn.style.borderRadius = "6px";
-  exportBtn.style.cursor = "pointer";
-  exportBtn.addEventListener("click", exportCSV);
-  filterContainer.appendChild(exportBtn);
-}
-
-function exportCSV() {
-  const rows = [
-    [
-      "Rank",
-      "Title",
-      "Series",
-      "Era",
-      "Broadcast Year",
-      "Director",
-      "Writer",
-      "Doctor",
-      "Companion",
-      "Cast Count",
-    ],
-    ...state.filtered.map((ep) => [
-      ep.rank,
-      ep.title,
-      ep.series ?? "",
-      ep.era,
-      ep._year ?? "",
-      ep.director,
-      Array.isArray(ep.writer) ? ep.writer.join("; ") : ep.writer,
-      ep.doctor,
-      ep.companion,
-      ep.cast.length,
-    ]),
-  ];
-
-  const csv = rows.map((r) =>
-    r
-      .map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`)
-      .join(",")
-  ).join("\n");
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "doctor_who_episodes.csv";
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-// ---------------------- Event Listeners ----------------------
-function setupEventListeners() {
-  const debouncedFilter = debounce(() => {
-    state.filters.name = refs.nameFilter.value.trim();
-    applyFilters();
-  }, CONFIG.FILTER_DEBOUNCE_MS);
-
-  refs.nameFilter.addEventListener("input", debouncedFilter);
-
-  refs.eraFilter.addEventListener("change", () => {
-    state.filters.era = refs.eraFilter.value;
-    applyFilters();
-  });
-
-  refs.doctorFilter.addEventListener("change", () => {
-    state.filters.doctor = refs.doctorFilter.value;
-    applyFilters();
-  });
-
-  document.querySelectorAll("#episodes-table th[data-sort]").forEach((th) => {
-    th.addEventListener("click", (e) => {
-      const field = th.dataset.sort;
-      sortEpisodes(field, e.shiftKey);
-    });
-  });
-}
-
-// ---------------------- Data Loading ----------------------
+// ---------------------- DATA LOADING ----------------------
 async function loadEpisodes() {
+  showLoading(true);
+  showError(null);
+
   try {
-    showError("");
-    showLoading(true);
+    const all = [];
+    for (const url of CONFIG.DATA_URLS) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Fetch failed (${res.status})`);
+      const data = await res.json();
+      if (Array.isArray(data)) all.push(...data);
+    }
 
-    const resp = await fetch(CONFIG.DATA_URL);
-    if (!resp.ok) throw new Error(`Network error: ${resp.status}`);
-
-    const raw = await resp.json();
-    const data = Array.isArray(raw) ? raw : raw.episodes;
-    if (!Array.isArray(data)) throw new Error("Fetched data is not an array");
-
-    state.episodes = data.map((ep, i) => normalizeEpisode(ep, i));
+    state.episodes = all.map(normalizeEpisode);
+    populateFilters();
     state.filtered = [...state.episodes];
+    renderTable();
 
-    populateDropdowns();
-    setWarningCount(state.warnings.length);
-    sortEpisodes("rank");
   } catch (err) {
     showError("Failed to load episodes: " + err.message);
   } finally {
@@ -214,238 +86,258 @@ async function loadEpisodes() {
   }
 }
 
-// ---------------------- Normalization ----------------------
-function normalizeEpisode(raw, idx) {
-  const ep = {
-    rank: parseIntSafe(raw.rank, idx + 1),
-    title: raw.title ?? `Untitled #${idx + 1}`,
-    series: parseIntSafe(raw.series, null),
-    era: raw.era ?? "Unknown",
-    broadcast_date: raw.broadcast_date ?? null,
-    director: raw.director ?? "—",
-    writer: normalizeWriters(raw.writer),
-    doctor: formatDoctor(raw.doctor),
-    companion: formatCompanion(raw.companion),
-    cast: Array.isArray(raw.cast) ? raw.cast : [],
-  };
-
+// Normalize structure
+function normalizeEpisode(ep) {
   const date = parseDate(ep.broadcast_date);
-  ep._parsedDate = date;
-  ep._year = date ? date.getFullYear() : null;
-  return ep;
+  const year = date ? date.getFullYear() : null;
+  const decade = year ? Math.floor(year / 10) * 10 : "Unknown";
+
+  return {
+    rank: ep.rank ?? null,
+    title: ep.title ?? "—",
+    series: ep.series ?? null,
+    era: ep.era ?? "—",
+    broadcast_date: ep.broadcast_date ?? "—",
+    _year: year,
+    _decade: decade,
+    director: ep.director ?? "—",
+    writer: Array.isArray(ep.writer) ? ep.writer.join(", ") : (ep.writer ?? "—"),
+    doctor: formatDoctor(ep.doctor),
+    companion: formatCompanion(ep.companion),
+    cast: Array.isArray(ep.cast) ? ep.cast : [],
+  };
 }
 
-function parseIntSafe(val, fallback) {
-  const n = parseInt(val);
-  return Number.isFinite(n) ? n : fallback;
+// ---------------------- FILTERS ----------------------
+function injectExtraFilters() {
+  const filtersDiv = document.querySelector(".filters");
+
+  // Era
+  const eraLabel = document.createElement("label");
+  eraLabel.textContent = "Era:";
+  const eraSelect = document.createElement("select");
+  eraSelect.id = "era-filter";
+  eraSelect.innerHTML = `<option value="">All</option>`;
+  eraLabel.appendChild(eraSelect);
+  filtersDiv.appendChild(eraLabel);
+
+  // Doctor
+  const docLabel = document.createElement("label");
+  docLabel.textContent = "Doctor:";
+  const docSelect = document.createElement("select");
+  docSelect.id = "doctor-filter";
+  docSelect.innerHTML = `<option value="">All</option>`;
+  docLabel.appendChild(docSelect);
+  filtersDiv.appendChild(docLabel);
+
+  // Export
+  const exportBtn = document.createElement("button");
+  exportBtn.textContent = "Export CSV";
+  exportBtn.id = "export-csv";
+  filtersDiv.appendChild(exportBtn);
+
+  refs.eraFilter = eraSelect;
+  refs.doctorFilter = docSelect;
+  refs.exportBtn = exportBtn;
 }
 
-function parseDate(value) {
-  if (!value) return null;
-  const d = Date.parse(value);
-  if (!isNaN(d)) return new Date(d);
-  const m = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/.exec(value);
-  if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
-  return null;
+function populateFilters() {
+  const eras = [...new Set(state.episodes.map(e => e.era).filter(Boolean))];
+  const doctors = [...new Set(state.episodes.map(e => e.doctor).filter(Boolean))];
+
+  refs.eraFilter.innerHTML = `<option value="">All</option>` + eras.map(e => `<option>${e}</option>`).join("");
+  refs.doctorFilter.innerHTML = `<option value="">All</option>` + doctors.map(d => `<option>${d}</option>`).join("");
 }
 
-function normalizeWriters(w) {
-  if (!w) return ["—"];
-  if (Array.isArray(w)) return w.map((x) => x.trim());
-  return w.split(/[,/&]/).map((x) => x.trim());
-}
-
-function formatDoctor(d) {
-  if (!d) return "—";
-  if (Array.isArray(d)) return d.map(formatDoctor).join(", ");
-  if (typeof d === "object") {
-    return `${d.actor || d.name || "Unknown"}${d.incarnation ? ` (${d.incarnation})` : ""}`;
-  }
-  return String(d);
-}
-
-function formatCompanion(c) {
-  if (!c) return "—";
-  if (Array.isArray(c)) return c.map(formatCompanion).join(", ");
-  if (typeof c === "object") return `${c.actor || "Unknown"}${c.character ? ` (${c.character})` : ""}`;
-  return String(c);
-}
-
-// ---------------------- Filtering ----------------------
 function applyFilters() {
-  const q = state.filters.name.toLowerCase();
-  const era = state.filters.era;
-  const doctor = state.filters.doctor;
+  const nameQ = refs.nameFilter.value.trim().toLowerCase();
+  const eraQ = refs.eraFilter.value;
+  const docQ = refs.doctorFilter.value;
 
-  state.filtered = state.episodes.filter((ep) => {
-    const matchName = !q || ep.title.toLowerCase().includes(q);
-    const matchEra = era === "all" || ep.era.toLowerCase() === era.toLowerCase();
-    const matchDoctor = doctor === "all" || ep.doctor.toLowerCase().includes(doctor.toLowerCase());
-    return matchName && matchEra && matchDoctor;
+  state.filtered = state.episodes.filter(ep => {
+    const nameMatch = ep.title.toLowerCase().includes(nameQ);
+    const eraMatch = !eraQ || ep.era === eraQ;
+    const docMatch = !docQ || ep.doctor === docQ;
+    return nameMatch && eraMatch && docMatch;
   });
 
   applySort();
-  displayEpisodes(state.filtered);
+  renderTable();
 }
 
-function populateDropdowns() {
-  const eras = [...new Set(state.episodes.map((e) => e.era).filter(Boolean))].sort();
-  const doctors = [...new Set(state.episodes.map((e) => e.doctor).filter((d) => d !== "—"))].sort();
+// ---------------------- SORTING ----------------------
+function setupEventListeners() {
+  // Debounce name filter
+  refs.nameFilter.addEventListener("input", debounce(applyFilters, CONFIG.FILTER_DEBOUNCE_MS));
+  refs.eraFilter.addEventListener("change", applyFilters);
+  refs.doctorFilter.addEventListener("change", applyFilters);
+  refs.exportBtn.addEventListener("click", exportCSV);
 
-  eras.forEach((era) => {
-    const opt = document.createElement("option");
-    opt.value = era;
-    opt.textContent = era;
-    refs.eraFilter.appendChild(opt);
-  });
-
-  doctors.forEach((doc) => {
-    const opt = document.createElement("option");
-    opt.value = doc;
-    opt.textContent = doc;
-    refs.doctorFilter.appendChild(opt);
+  document.querySelectorAll("th[data-sort]").forEach(th => {
+    th.addEventListener("click", e => handleSortClick(th, e.shiftKey));
   });
 }
 
-// ---------------------- Sorting ----------------------
-function sortEpisodes(field, multi = false) {
-  const existing = state.sort.find((s) => s.field === field);
+function handleSortClick(th, isMulti) {
+  const field = th.dataset.sort;
+  let existing = state.sortLevels.find(s => s.field === field);
 
-  if (multi && existing) {
-    existing.ascending = !existing.ascending;
-  } else if (multi) {
-    state.sort.push({ field, ascending: true });
+  if (!isMulti) {
+    // reset sort levels if no shift
+    if (existing) existing.ascending = !existing.ascending;
+    else state.sortLevels = [{ field, ascending: true }];
   } else {
-    if (existing) {
-      existing.ascending = !existing.ascending;
-      state.sort = [existing];
-    } else {
-      state.sort = [{ field, ascending: true }];
-    }
+    if (existing) existing.ascending = !existing.ascending;
+    else state.sortLevels.push({ field, ascending: true });
   }
 
-  updateSortIndicators();
   applySort();
-  displayEpisodes(state.filtered);
+  renderTable();
 }
 
 function applySort() {
-  const sorters = state.sort;
+  if (!state.sortLevels.length) return;
+
+  const comparators = state.sortLevels.map(({ field, ascending }) => {
+    const dir = ascending ? 1 : -1;
+    return (a, b) => {
+      let va = a[field], vb = b[field];
+      if (typeof va === "string") va = va.toLowerCase();
+      if (typeof vb === "string") vb = vb.toLowerCase();
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    };
+  });
+
   state.filtered.sort((a, b) => {
-    for (const { field, ascending } of sorters) {
-      let va = a[field];
-      let vb = b[field];
-
-      if (field === "broadcast_date") {
-        const da = a._parsedDate;
-        const db = b._parsedDate;
-        if (da && db) return (da - db) * (ascending ? 1 : -1);
-        if (!da && db) return 1;
-        if (da && !db) return -1;
-      }
-
-      if (va === null || va === undefined || va === "—") return 1;
-      if (vb === null || vb === undefined || vb === "—") return -1;
-
-      if (typeof va === "number" && typeof vb === "number")
-        return (va - vb) * (ascending ? 1 : -1);
-
-      const cmp = String(va).localeCompare(String(vb));
-      if (cmp !== 0) return cmp * (ascending ? 1 : -1);
+    for (const cmp of comparators) {
+      const res = cmp(a, b);
+      if (res !== 0) return res;
     }
     return 0;
   });
 }
 
-function updateSortIndicators() {
-  document.querySelectorAll("#episodes-table th").forEach((th) =>
-    th.classList.remove("sort-asc", "sort-desc")
-  );
-  state.sort.forEach(({ field, ascending }) => {
-    const th = document.querySelector(`#episodes-table th[data-sort="${field}"]`);
-    if (th) th.classList.add(ascending ? "sort-asc" : "sort-desc");
-  });
-}
-
-// ---------------------- Display (Decade Grouping) ----------------------
-function displayEpisodes(list) {
+// ---------------------- RENDERING ----------------------
+function renderTable() {
   refs.tbody.innerHTML = "";
-  if (!list.length) {
-    refs.noResults.style.display = "block";
+
+  if (!state.filtered.length) {
     refs.table.style.display = "none";
+    refs.noResults.style.display = "block";
     return;
   }
 
-  refs.noResults.style.display = "none";
   refs.table.style.display = "table";
+  refs.noResults.style.display = "none";
+
+  // Group by decade
+  const grouped = {};
+  for (const ep of state.filtered) {
+    const decade = ep._decade || "Unknown";
+    if (!grouped[decade]) grouped[decade] = [];
+    grouped[decade].push(ep);
+  }
 
   const frag = document.createDocumentFragment();
 
-  // Group by decade
-  const groups = {};
-  list.forEach((ep) => {
-    const decade = ep._year ? `${Math.floor(ep._year / 10) * 10}s` : "Unknown Decade";
-    if (!groups[decade]) groups[decade] = [];
-    groups[decade].push(ep);
-  });
-
-  Object.entries(groups).forEach(([decade, episodes]) => {
-    const decadeRow = document.createElement("tr");
-    decadeRow.className = "decade-row";
-    const td = document.createElement("td");
-    td.colSpan = 10;
-    td.textContent = `${decade} (${episodes.length} episodes)`;
-    td.style.background = "#f0f4ff";
-    td.style.fontWeight = "bold";
-    td.style.cursor = "pointer";
-    td.addEventListener("click", () => {
-      if (state.collapsedDecades.has(decade)) state.collapsedDecades.delete(decade);
-      else state.collapsedDecades.add(decade);
-      displayEpisodes(state.filtered);
-    });
-    decadeRow.appendChild(td);
-    frag.appendChild(decadeRow);
+  for (const [decade, eps] of Object.entries(grouped)) {
+    const trDecade = document.createElement("tr");
+    trDecade.className = "decade-row";
+    if (state.collapsedDecades.has(decade)) trDecade.classList.add("collapsed");
+    const tdDecade = document.createElement("td");
+    tdDecade.colSpan = 10;
+    tdDecade.textContent = `${decade}s (${eps.length} episodes)`;
+    trDecade.appendChild(tdDecade);
+    trDecade.addEventListener("click", () => toggleDecade(decade));
+    frag.appendChild(trDecade);
 
     if (!state.collapsedDecades.has(decade)) {
-      episodes.forEach((ep) => {
-        const tr = document.createElement("tr");
-        const createCell = (text) => {
-          const td = document.createElement("td");
-          td.textContent = text ?? "—";
-          return td;
-        };
-
-        tr.append(
-          createCell(ep.rank),
-          createCell(ep.title),
-          createCell(ep.series),
-          createCell(ep.era),
-          createCell(ep._year ?? "—"),
-          createCell(ep.director),
-          createCell(ep.writer.join(", ")),
-          createCell(ep.doctor),
-          createCell(ep.companion)
-        );
-
-        const castTd = document.createElement("td");
-        const badge = document.createElement("span");
-        badge.className = "cast-count";
-        badge.textContent = ep.cast.length;
-        castTd.appendChild(badge);
-        tr.appendChild(castTd);
-        frag.appendChild(tr);
-      });
+      eps.forEach(ep => frag.appendChild(renderEpisodeRow(ep)));
     }
-  });
+  }
 
   refs.tbody.appendChild(frag);
 }
 
-// ---------------------- Utils ----------------------
-function debounce(fn, delay) {
+function renderEpisodeRow(ep) {
+  const tr = document.createElement("tr");
+  const fields = ["rank", "title", "series", "era", "_year", "director", "writer", "doctor", "companion"];
+  fields.forEach(f => {
+    const td = document.createElement("td");
+    td.textContent = ep[f] ?? "—";
+    tr.appendChild(td);
+  });
+  const tdCast = document.createElement("td");
+  tdCast.innerHTML = `<span class="cast-count">${ep.cast.length}</span>`;
+  tr.appendChild(tdCast);
+  return tr;
+}
+
+function toggleDecade(decade) {
+  if (state.collapsedDecades.has(decade)) state.collapsedDecades.delete(decade);
+  else state.collapsedDecades.add(decade);
+  renderTable();
+}
+
+// ---------------------- EXPORT CSV ----------------------
+function exportCSV() {
+  if (!state.filtered.length) return alert("No data to export!");
+  const headers = ["Rank", "Title", "Series", "Era", "Year", "Director", "Writer", "Doctor", "Companion", "Cast Count"];
+  const rows = state.filtered.map(ep => [
+    ep.rank,
+    ep.title,
+    ep.series,
+    ep.era,
+    ep._year,
+    ep.director,
+    ep.writer,
+    ep.doctor,
+    ep.companion,
+    ep.cast.length
+  ]);
+
+  const csv = [headers, ...rows].map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "doctor_who_episodes.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ---------------------- HELPERS ----------------------
+function parseDate(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  return isNaN(d) ? null : d;
+}
+
+function formatDoctor(doctor) {
+  if (!doctor) return "—";
+  if (Array.isArray(doctor)) return doctor.map(formatDoctor).join(", ");
+  if (typeof doctor === "object")
+    return `${doctor.actor || doctor.name || "Unknown"}${doctor.incarnation ? ` (${doctor.incarnation})` : ""}`;
+  return String(doctor);
+}
+
+function formatCompanion(companion) {
+  if (!companion) return "—";
+  if (Array.isArray(companion)) return companion.map(formatCompanion).join(", ");
+  if (typeof companion === "object")
+    return `${companion.actor || "Unknown"}${companion.character ? ` (${companion.character})` : ""}`;
+  return String(companion);
+}
+
+function debounce(fn, wait) {
   let t;
   return (...args) => {
     clearTimeout(t);
-    t = setTimeout(() => fn(...args), delay);
+    t = setTimeout(() => fn.apply(this, args), wait);
   };
 }
