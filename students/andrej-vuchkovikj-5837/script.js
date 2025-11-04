@@ -638,104 +638,178 @@ function displayValidationWarnings() {
 // ============================================================================
 
 /**
- * Handle keyboard navigation
- * Arrow Up/Down: Navigate table rows (only when table area has focus)
- * Enter: Toggle sort direction
- * Tab/Shift+Tab: Use browser's native tab behavior, only intercept within table
- * F: Focus filter
- * Escape: Return to table
- * 
- * IMPORTANT: This handler only intercepts Tab when actively in table rows.
- * Otherwise, browser's native Tab behavior is preserved.
+ * Enhanced keyboard navigation that works with ALL interactive elements
+ * - Table rows: Arrow Up/Down, Enter to sort
+ * - Filter input: Tab/Shift+Tab, Escape
+ * - Column headers: Click (already works), Tab navigation
+ * - All elements: Keyboard shortcuts for quick access
  */
 function handleKeyboardNavigation(event) {
     const key = event.key;
     const tbody = document.getElementById('episodes-body');
     const rows = tbody ? Array.from(tbody.querySelectorAll('tr')) : [];
     const nameFilter = document.getElementById('name-filter');
+    const headers = document.querySelectorAll('th[data-sort]');
     
     if (!rows.length) return;
     
-    const isFilterFocused = document.activeElement === nameFilter;
+    const activeElement = document.activeElement;
+    const isFilterFocused = activeElement === nameFilter;
+    const isHeaderFocused = Array.from(headers).includes(activeElement);
     const isRowFocused = rows.some(row => row.classList.contains('keyboard-focused'));
     
-    // Arrow Down: Move to next row (only when not in filter)
-    if (key === 'ArrowDown' && !isFilterFocused) {
+    // ========== TABLE ROW NAVIGATION ==========
+    // Arrow Down: Move to next row
+    if (key === 'ArrowDown' && !isFilterFocused && !isHeaderFocused) {
         event.preventDefault();
         state.keyboard.focusedRowIndex = Math.min(state.keyboard.focusedRowIndex + 1, rows.length - 1);
         highlightRow(rows, state.keyboard.focusedRowIndex);
-        console.log(`⬇️ Row ${state.keyboard.focusedRowIndex + 1}`);
+        console.log(`⬇️ Arrow Down: Row ${state.keyboard.focusedRowIndex + 1}`);
     }
-    // Arrow Up: Move to previous row (only when not in filter)
-    else if (key === 'ArrowUp' && !isFilterFocused) {
+    // Arrow Up: Move to previous row
+    else if (key === 'ArrowUp' && !isFilterFocused && !isHeaderFocused) {
         event.preventDefault();
         state.keyboard.focusedRowIndex = Math.max(state.keyboard.focusedRowIndex - 1, 0);
         highlightRow(rows, state.keyboard.focusedRowIndex);
-        console.log(`⬆️ Row ${state.keyboard.focusedRowIndex + 1}`);
+        console.log(`⬆️ Arrow Up: Row ${state.keyboard.focusedRowIndex + 1}`);
     }
-    // Enter: Toggle sort direction (only in table)
-    else if (key === 'Enter' && !isFilterFocused && isRowFocused) {
+    // J key: Move to next row (vim-style navigation)
+    else if ((key === 'j' || key === 'J') && !isFilterFocused && !isHeaderFocused) {
+        event.preventDefault();
+        state.keyboard.focusedRowIndex = Math.min(state.keyboard.focusedRowIndex + 1, rows.length - 1);
+        highlightRow(rows, state.keyboard.focusedRowIndex);
+        console.log(`⬇️ J: Row ${state.keyboard.focusedRowIndex + 1}`);
+    }
+    // K key: Move to previous row (vim-style navigation)
+    else if ((key === 'k' || key === 'K') && !isFilterFocused && !isHeaderFocused) {
+        event.preventDefault();
+        state.keyboard.focusedRowIndex = Math.max(state.keyboard.focusedRowIndex - 1, 0);
+        highlightRow(rows, state.keyboard.focusedRowIndex);
+        console.log(`⬆️ K: Row ${state.keyboard.focusedRowIndex + 1}`);
+    }
+    // PageDown: Move down 10 rows
+    else if (key === 'PageDown' && !isFilterFocused && !isHeaderFocused) {
+        event.preventDefault();
+        state.keyboard.focusedRowIndex = Math.min(state.keyboard.focusedRowIndex + 10, rows.length - 1);
+        highlightRow(rows, state.keyboard.focusedRowIndex);
+        console.log(`⬇️ PageDown: Row ${state.keyboard.focusedRowIndex + 1}`);
+    }
+    // PageUp: Move up 10 rows
+    else if (key === 'PageUp' && !isFilterFocused && !isHeaderFocused) {
+        event.preventDefault();
+        state.keyboard.focusedRowIndex = Math.max(state.keyboard.focusedRowIndex - 10, 0);
+        highlightRow(rows, state.keyboard.focusedRowIndex);
+        console.log(`⬆️ PageUp: Row ${state.keyboard.focusedRowIndex + 1}`);
+    }
+    // Enter on row: Toggle sort direction
+    else if (key === 'Enter' && isRowFocused && !isFilterFocused) {
         event.preventDefault();
         state.sort.ascending = !state.sort.ascending;
         updateSortIndicators();
         sortEpisodes();
         console.log(`📊 Sorting by: ${state.sort.field} (${state.sort.ascending ? '↑' : '↓'})`);
     }
-    // Tab/Shift+Tab: Only intercept when IN table rows, otherwise let browser handle
-    else if (key === 'Tab' && isRowFocused) {
+    // Enter on header: Sort by that column
+    else if (key === 'Enter' && isHeaderFocused) {
         event.preventDefault();
-        
-        if (!event.shiftKey) {
-            // Tab: Move down or to filter
-            if (state.keyboard.focusedRowIndex < rows.length - 1) {
-                state.keyboard.focusedRowIndex++;
-                highlightRow(rows, state.keyboard.focusedRowIndex);
-            } else {
-                nameFilter.focus();
-                rows.forEach(row => row.classList.remove('keyboard-focused'));
-                console.log('⇥ Moved to filter');
-            }
+        const field = activeElement.getAttribute('data-sort');
+        if (state.sort.field === field) {
+            state.sort.ascending = !state.sort.ascending;
         } else {
-            // Shift+Tab: Move up or to filter
-            if (state.keyboard.focusedRowIndex > 0) {
-                state.keyboard.focusedRowIndex--;
-                highlightRow(rows, state.keyboard.focusedRowIndex);
-            } else {
-                nameFilter.focus();
-                rows.forEach(row => row.classList.remove('keyboard-focused'));
-                console.log('⇧⇥ Moved to filter');
-            }
+            state.sort.field = field;
+            state.sort.ascending = true;
+        }
+        updateSortIndicators();
+        sortEpisodes();
+        console.log(`📊 Header sort: ${field} (${state.sort.ascending ? '↑' : '↓'})`);
+    }
+    
+    // ========== TAB NAVIGATION - BETWEEN ALL ELEMENTS ==========
+    // Tab from row: Move to next row or to filter/headers
+    else if (key === 'Tab' && isRowFocused && !event.shiftKey) {
+        event.preventDefault();
+        if (state.keyboard.focusedRowIndex < rows.length - 1) {
+            state.keyboard.focusedRowIndex++;
+            highlightRow(rows, state.keyboard.focusedRowIndex);
+        } else {
+            nameFilter.focus();
+            rows.forEach(row => row.classList.remove('keyboard-focused'));
+            console.log('⇥ Tab to filter');
+        }
+    }
+    // Shift+Tab from row: Move to previous row or to headers
+    else if (key === 'Tab' && isRowFocused && event.shiftKey) {
+        event.preventDefault();
+        if (state.keyboard.focusedRowIndex > 0) {
+            state.keyboard.focusedRowIndex--;
+            highlightRow(rows, state.keyboard.focusedRowIndex);
+        } else {
+            headers[0]?.focus();
+            rows.forEach(row => row.classList.remove('keyboard-focused'));
+            console.log('⇧⇥ Shift+Tab to headers');
         }
     }
     // Tab from filter: Move to first row
-    else if (key === 'Tab' && !event.shiftKey && isFilterFocused) {
+    else if (key === 'Tab' && isFilterFocused && !event.shiftKey) {
         event.preventDefault();
         state.keyboard.focusedRowIndex = 0;
         highlightRow(rows, 0);
-        console.log('⇥ Moved to table - Row 1');
+        console.log('⇥ Tab from filter to table');
     }
-    // Shift+Tab from filter: Move to last row
-    else if (key === 'Tab' && event.shiftKey && isFilterFocused) {
+    // Shift+Tab from filter: Move to last header
+    else if (key === 'Tab' && isFilterFocused && event.shiftKey) {
         event.preventDefault();
-        state.keyboard.focusedRowIndex = rows.length - 1;
-        highlightRow(rows, rows.length - 1);
-        console.log('⇧⇥ Moved to table - Last row');
+        headers[headers.length - 1]?.focus();
+        console.log('⇧⇥ Shift+Tab from filter to headers');
     }
-    // F: Focus filter (custom shortcut)
-    else if ((key === 'f' || key === 'F') && !isFilterFocused) {
+    // Tab from header: Move to next header or filter
+    else if (key === 'Tab' && isHeaderFocused && !event.shiftKey) {
+        // Let browser handle natural Tab flow through headers
+        // Eventually Tab will reach filter
+        console.log('⇥ Tab: Natural header navigation');
+    }
+    // Shift+Tab from header: Move to previous header or back
+    else if (key === 'Tab' && isHeaderFocused && event.shiftKey) {
+        // Let browser handle natural Shift+Tab flow
+        console.log('⇧⇥ Shift+Tab: Natural header navigation');
+    }
+    
+    // ========== QUICK ACCESS SHORTCUTS ==========
+    // F or Ctrl+F: Focus filter (custom shortcut, doesn't override browser search)
+    else if ((key === 'f' || key === 'F') && !isFilterFocused && event.ctrlKey === false) {
         event.preventDefault();
         nameFilter.focus();
         nameFilter.select();
         rows.forEach(row => row.classList.remove('keyboard-focused'));
-        console.log('🔍 Filter focused');
+        console.log('🔍 Focus filter (F)');
     }
-    // Escape: Return to table from filter
+    // Escape: Return focus to table from filter
     else if (key === 'Escape' && isFilterFocused) {
         event.preventDefault();
         nameFilter.blur();
         state.keyboard.focusedRowIndex = 0;
         highlightRow(rows, 0);
-        console.log('📋 Back to table');
+        console.log('📋 Escape: Back to table');
+    }
+    // Space: Activate currently focused header (sort)
+    else if (key === ' ' && isHeaderFocused) {
+        event.preventDefault();
+        activeElement.click();
+        console.log('✓ Space: Activated header click');
+    }
+    // Home: Go to first row
+    else if (key === 'Home' && (isRowFocused || !isFilterFocused)) {
+        event.preventDefault();
+        state.keyboard.focusedRowIndex = 0;
+        highlightRow(rows, 0);
+        console.log('⏠ Home: First row');
+    }
+    // End: Go to last row
+    else if (key === 'End' && (isRowFocused || !isFilterFocused)) {
+        event.preventDefault();
+        state.keyboard.focusedRowIndex = rows.length - 1;
+        highlightRow(rows, state.keyboard.focusedRowIndex);
+        console.log('⏁ End: Last row');
     }
 }
 
