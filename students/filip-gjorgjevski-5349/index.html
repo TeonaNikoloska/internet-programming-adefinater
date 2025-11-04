@@ -5,27 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Doctor Who Episodes Explorer</title>
     <link rel="stylesheet" href="styles.css">
-    <!-- Add styling for keyboard navigation and focus -->
     <style>
         #episodes-table th {
             cursor: pointer;
             user-select: none;
-            outline: none; /* Remove default outline */
+            outline: none;
         }
-        /* Visual feedback for focused header */
         #episodes-table th:focus {
             box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.5);
             border-radius: 4px;
         }
-        /* Visual feedback for current row */
         #episodes-body tr.focused {
             background-color: #e8f0fe;
         }
-        #episodes-table th.sort-asc::after {
-            content: ' ▲';
-        }
-        #episodes-table th.sort-desc::after {
-            content: ' ▼';
+        #episodes-table th.sort-asc::after { content: ' ▲'; }
+        #episodes-table th.sort-desc::after { content: ' ▼'; }
+
+        /* Style for the new validation warnings container */
+        .warnings {
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            background-color: #fffbe6;
+            border: 1px solid #ffe58f;
+            border-radius: 4px;
+            color: #d46b08;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -43,6 +47,9 @@
             </div>
         </section>
 
+        <!-- Container for validation warnings count -->
+        <div id="validation-warnings" class="warnings" style="display: none;"></div>
+
         <main>
             <div id="loading" class="loading">Loading episodes...</div>
             <div id="error" class="error" style="display: none;"></div>
@@ -50,7 +57,6 @@
             <table id="episodes-table" style="display: none;">
                 <thead>
                     <tr>
-                        <!-- Added tabindex="0" to make headers focusable -->
                         <th data-sort="rank" tabindex="0">Rank</th>
                         <th data-sort="title" tabindex="0">Title</th>
                         <th data-sort="series" tabindex="0">Series</th>

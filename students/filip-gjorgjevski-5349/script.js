@@ -16,7 +16,7 @@ let state = {
     filtered: [],
     sort: { field: 'rank', ascending: true },
     filters: { name: '' },
-    focusedRowIndex: -1 // -1 means no row is focused
+    focusedRowIndex: -1
 };
 
 // Initialize Application
@@ -35,9 +35,8 @@ function setupEventListeners() {
     document.querySelectorAll('#episodes-table thead th[data-sort]').forEach(header => {
         header.addEventListener('click', () => {
             const field = header.dataset.sort;
-            if (state.sort.field === field) {
-                state.sort.ascending = !state.sort.ascending;
-            } else {
+            if (state.sort.field === field) state.sort.ascending = !state.sort.ascending;
+            else {
                 state.sort.field = field;
                 state.sort.ascending = true;
             }
@@ -45,7 +44,6 @@ function setupEventListeners() {
         });
     });
 
-    // Main listener for all keyboard navigation
     document.addEventListener('keydown', handleKeyboardNavigation);
 }
 
@@ -61,8 +59,20 @@ async function loadEpisodes() {
         }
 
         const jsonDataArray = await Promise.all(responses.map(res => res.json()));
-        state.episodes = jsonDataArray.flatMap(data => data.episodes);
+        const allEpisodes = jsonDataArray.flatMap(data => data.episodes);
+
+        // Perform data validation
+        const warnings = validateData(allEpisodes);
+        if (warnings.length > 0) {
+            warnings.forEach(w => console.warn(w));
+            const warningsDiv = document.getElementById('validation-warnings');
+            warningsDiv.textContent = `Found ${warnings.length} data validation warning(s). See console for details.`;
+            warningsDiv.style.display = 'block';
+        }
+
+        state.episodes = allEpisodes;
         applyFiltersAndSort();
+
     } catch (error) {
         showError(error.message);
     } finally {
@@ -70,21 +80,61 @@ async function loadEpisodes() {
     }
 }
 
+// NEW: Data Validation Function
+function validateData(episodes) {
+    const warnings = [];
+    const seenRanks = new Set();
+    const now = new Date();
+    const requiredFields = ['rank', 'title', 'era', 'broadcast_date'];
+
+    episodes.forEach((episode, index) => {
+        const episodeId = `Episode "${episode.title || `(Untitled at index ${index}`})"`;
+
+        // Check for missing required fields
+        requiredFields.forEach(field => {
+            if (episode[field] === null || episode[field] === undefined || episode[field] === '') {
+                warnings.push(`Validation Error: ${episodeId} is missing required field '${field}'.`);
+            }
+        });
+
+        // Check for future broadcast dates
+        const broadcastDate = normalizeDate(episode.broadcast_date);
+        if (broadcastDate && broadcastDate > now) {
+            warnings.push(`Validation Error: ${episodeId} has a future broadcast date: ${episode.broadcast_date}.`);
+        }
+
+        // Check for duplicate/invalid ranks
+        if (typeof episode.rank !== 'number' || !isFinite(episode.rank)) {
+            warnings.push(`Validation Error: ${episodeId} has an invalid rank: ${episode.rank}.`);
+        } else {
+            if (seenRanks.has(episode.rank)) {
+                warnings.push(`Validation Error: Duplicate rank found. Rank '${episode.rank}' is used by ${episodeId} and another episode.`);
+            }
+            seenRanks.add(episode.rank);
+        }
+
+        // Check for negative series numbers
+        if (typeof episode.series === 'number' && episode.series < 0) {
+            warnings.push(`Validation Error: ${episodeId} has a negative series number: ${episode.series}.`);
+        }
+    });
+
+    return warnings;
+}
+
+
 // Main function to apply filters and sorting
 function applyFiltersAndSort() {
-    // Reset row focus whenever data changes
     state.focusedRowIndex = -1;
-
     const filterText = state.filters.name.toLowerCase();
-    let processedData = state.episodes.filter(episode => {
-        const title = episode.title?.toLowerCase() || '';
-        const doctor = formatDoctor(episode.doctor, false).toLowerCase();
-        const companion = formatCompanion(episode.companion, false).toLowerCase();
-        const writer = episode.writer?.toLowerCase() || '';
-        const director = episode.director?.toLowerCase() || '';
-        return title.includes(filterText) || doctor.includes(filterText) ||
-               companion.includes(filterText) || writer.includes(filterText) ||
-               director.includes(filterText);
+    
+    let processedData = state.episodes.filter(ep => {
+        const title = ep.title?.toLowerCase() || '';
+        const doctor = formatDoctor(ep.doctor, false).toLowerCase();
+        const companion = formatCompanion(ep.companion, false).toLowerCase();
+        const writer = ep.writer?.toLowerCase() || '';
+        const director = ep.director?.toLowerCase() || '';
+        return title.includes(filterText) || doctor.includes(filterText) || companion.includes(filterText) || writer.includes(filterText) || director.includes(filterText);
     });
 
     const { field, ascending } = state.sort;
@@ -102,8 +152,7 @@ function applyFiltersAndSort() {
 // Display Functions
 function displayEpisodes(episodes) {
     const tableBody = document.getElementById('episodes-body');
-    tableBody.innerHTML = ''; 
-
+    tableBody.innerHTML = '';
     updateSortHeaders();
     document.getElementById('no-results').style.display = episodes.length === 0 ? 'block' : 'none';
 
@@ -126,53 +175,50 @@ function displayEpisodes(episodes) {
         createCell(formatCompanion(episode.companion));
         createCell(episode.cast?.length || 0);
 
-        // Add click listener for focus
         row.addEventListener('click', () => {
             state.focusedRowIndex = index;
             updateRowFocus();
         });
     });
-    // Ensure focus is visually cleared if it was reset
     updateRowFocus();
 }
 
-// KEYBOARD NAVIGATION HANDLER
+// Keyboard Navigation Handler
 function handleKeyboardNavigation(e) {
-    const tableBody = document.getElementById('episodes-body');
-    const isTableFocused = tableBody.contains(document.activeElement) || document.activeElement.tagName === 'TH';
-
-    // Handle Enter to sort focused column
     if (e.key === 'Enter' && document.activeElement.tagName === 'TH') {
         e.preventDefault();
         document.activeElement.click();
     }
-
-    // Handle Arrow keys to navigate table rows
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         e.preventDefault();
         const direction = e.key === 'ArrowDown' ? 1 : -1;
         const numRows = state.filtered.length;
         if (numRows === 0) return;
-
-        // Move focus index
-        state.focusedRowIndex += direction;
-
-        // Clamp the index within bounds
-        if (state.focusedRowIndex >= numRows) state.focusedRowIndex = numRows - 1;
-        if (state.focusedRowIndex < 0) state.focusedRowIndex = 0;
-
+        state.focusedRowIndex = Math.max(0, Math.min(numRows - 1, state.focusedRowIndex + direction));
         updateRowFocus();
     }
 }
 
-// UTILITY FUNCTIONS
-function getSortValue(episode, field) {
+// Utility Functions
+function getSortValue(ep, field) {
     switch (field) {
-        case 'doctor': return formatDoctor(episode.doctor, false).toLowerCase();
-        case 'companion': return formatCompanion(episode.companion, false).toLowerCase();
-        case 'cast_count': return episode.cast?.length || 0;
-        case 'broadcast_date': return normalizeDate(episode.broadcast_date)?.getTime() || 0;
-        default: return (episode[field] || '').toString().toLowerCase();
+        case 'doctor': return formatDoctor(ep.doctor, false).toLowerCase();
+        case 'companion': return formatCompanion(ep.companion, false).toLowerCase();
+        case 'cast_count': return ep.cast?.length || 0;
+        case 'broadcast_date': return normalizeDate(ep.broadcast_date)?.getTime() || 0;
+        default: return (ep[field] || '').toString().toLowerCase();
+    }
+}
+
+function updateRowFocus() {
+    const rows = document.getElementById('episodes-body').rows;
+    for (let i = 0; i < rows.length; i++) {
+        if (i === state.focusedRowIndex) {
+            rows[i].classList.add('focused');
+            rows[i].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        } else {
+            rows[i].classList.remove('focused');
+        }
     }
 }
 
@@ -183,20 +229,6 @@ function updateSortHeaders() {
             th.classList.add(state.sort.ascending ? 'sort-asc' : 'sort-desc');
         }
     });
-}
-
-// Visually update which row has focus
-function updateRowFocus() {
-    const rows = document.getElementById('episodes-body').rows;
-    for (let i = 0; i < rows.length; i++) {
-        if (i === state.focusedRowIndex) {
-            rows[i].classList.add('focused');
-            // Scroll the focused row into view if it's not visible
-            rows[i].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        } else {
-            rows[i].classList.remove('focused');
-        }
-    }
 }
 
 function normalizeDate(dateString) {
@@ -225,7 +257,6 @@ function getYear(dateString) {
     return date ? date.getFullYear() : 'N/A';
 }
 
-// UI State Changers
 function showLoading(isLoading) {
     document.getElementById('loading').style.display = isLoading ? 'block' : 'none';
     document.getElementById('episodes-table').style.display = isLoading ? 'none' : 'table';
@@ -237,7 +268,6 @@ function showError(details) {
     const userMessage = "Error: Could not load Doctor Who episodes. Please check your network connection and try again.";
     errorElement.textContent = `${userMessage}\nDetails: ${details}`;
     errorElement.style.display = 'block';
-    
     document.getElementById('episodes-table').style.display = 'none';
     document.getElementById('loading').style.display = 'none';
 }
