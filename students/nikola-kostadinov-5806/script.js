@@ -29,7 +29,10 @@ let state = {
         ascending: true    // Sort direction
     },
     filters: {
-        name: ''          // Current filter value
+        name: '',          // Episode name filter
+        era: '',          // Era filter
+        doctor: '',        // Doctor filter
+        companion: ''      // Companion filter
     }
 };
 
@@ -37,6 +40,18 @@ let state = {
 async function init() {
     setupEventListeners();
     await loadEpisodes();
+}
+
+// Populate Filter Options
+function populateFilterOptions() {
+    // Era filter (static options from CONFIG)
+    const eraSelect = document.getElementById('era-filter');
+    CONFIG.ERA_ORDER.forEach(era => {
+        const option = document.createElement('option');
+        option.value = era;
+        option.textContent = era;
+        eraSelect.appendChild(option);
+    });
 }
 
 // Event Listeners Setup
@@ -63,10 +78,24 @@ function setupEventListeners() {
         });
     });
 
-    // Set up name filter
-    const nameFilter = document.getElementById('name-filter');
-    nameFilter.addEventListener('input', (e) => {
+    // Set up filters
+    document.getElementById('name-filter').addEventListener('input', (e) => {
         state.filters.name = e.target.value;
+        filterEpisodes();
+    });
+
+    document.getElementById('era-filter').addEventListener('change', (e) => {
+        state.filters.era = e.target.value;
+        filterEpisodes();
+    });
+
+    document.getElementById('doctor-filter').addEventListener('input', (e) => {
+        state.filters.doctor = e.target.value.toLowerCase();
+        filterEpisodes();
+    });
+
+    document.getElementById('companion-filter').addEventListener('input', (e) => {
+        state.filters.companion = e.target.value.toLowerCase();
         filterEpisodes();
     });
 }
@@ -342,17 +371,33 @@ function sortEpisodes(field) {
 // Filtering Functions
 function filterEpisodes() {
     const nameFilter = state.filters.name.toLowerCase().trim();
+    const eraFilter = state.filters.era;
+    const doctorFilter = state.filters.doctor.toLowerCase().trim();
+    const companionFilter = state.filters.companion.toLowerCase().trim();
 
-    // If no filter is applied, show all episodes
-    if (!nameFilter) {
-        state.filtered = [...state.episodes];
-    } else {
-        // Filter episodes by name (case-insensitive partial match)
-        state.filtered = state.episodes.filter(episode => {
-            const title = (episode.title || '').toLowerCase();
-            return title.includes(nameFilter);
-        });
-    }
+    state.filtered = state.episodes.filter(episode => {
+        // Name filter (case-insensitive partial match)
+        if (nameFilter && !(episode.title || '').toLowerCase().includes(nameFilter)) {
+            return false;
+        }
+
+        // Era filter (exact match)
+        if (eraFilter && episode.era !== eraFilter) {
+            return false;
+        }
+
+        // Doctor filter (case-insensitive partial match on actor name)
+        if (doctorFilter && !(episode.doctor?.actor || '').toLowerCase().includes(doctorFilter)) {
+            return false;
+        }
+
+        // Companion filter (case-insensitive partial match on actor name)
+        if (companionFilter && !(episode.companion?.actor || '').toLowerCase().includes(companionFilter)) {
+            return false;
+        }
+
+        return true;
+    });
 
     // Apply current sort after filtering
     if (state.sort.field) {
