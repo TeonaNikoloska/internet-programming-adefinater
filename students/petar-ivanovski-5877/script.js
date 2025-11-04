@@ -161,5 +161,5 @@ function showError(msg) {
     el.style.display = msg ? 'block' : 'none';
 }
 
-// Init
+// Inita
 document.addEventListener('DOMContentLoaded', init);
