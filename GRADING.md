@@ -4,7 +4,7 @@
 
 **Total Available Points:** ~125  
 **Grading Scale:** 0-100  
-**Conversion:** Your score is calculated as: `(earned_points / 100) × 100`, **capped at 100**
+**Conversion:** Your score is calculated as: `(earned_points - deductions) / 100 × 100`, **capped at 100**
 
 This means you can earn up to 125 points, but your final grade maxes out at 100. This design provides **multiple paths to achieving a perfect score** and rewards students who go above and beyond.
 
@@ -455,13 +455,90 @@ Bonus points reward exceptional work beyond requirements. Students can earn bonu
 | 40-59 | D (40-59) | Needs Improvement - Partial functionality, bugs present |
 | 0-39 | F (0-39) | Failing - Non-functional or minimal effort |
 
-**Remember:** Your final grade is calculated as `(earned_points / 100) × 100`, capped at 100.
+**Remember:** Your final grade is calculated as `(earned_points - deductions) / 100 × 100`, capped at 100, with a floor of 0.
+
+---
+
+## Negative Points and Grading Floor
+
+### How Deductions Work
+
+Your final score is calculated as:
+```
+Final Score = (Earned Points - Deductions) / 100 × 100
+```
+
+**Critical Rules:**
+1. **Minimum Grade: 0** - Your grade cannot go below zero, even with massive deductions
+2. **Deductions are cumulative** - Multiple issues result in multiple deductions being added together
+3. **Deductions apply after earning points** - You earn points first, then deductions are subtracted from your total
+4. **The 125-point buffer helps** - Extra points can absorb deductions without affecting your final grade
+
+### Why the 125-Point System Helps with Deductions
+
+The 125-point system provides a **25-point cushion** that can absorb deductions:
+
+- **Scenario 1:** You earn 105 points but have -5 in deductions → (105-5)/100 × 100 = **100%**
+- **Scenario 2:** You earn 90 points but have -5 in deductions → (90-5)/100 × 100 = **85%**
+- **Scenario 3:** You earn 75 points with no deductions → 75/100 × 100 = **75%**
+
+Notice that Scenario 1 got 100% despite deductions, while Scenario 2 ended up with the same 85% that someone with 90 points and -5 deductions would get. The buffer rewards effort and completeness.
+
+### Examples of How Deductions Impact Final Grades
+
+**Example 1: Strong Student with Minor Issues**
+- Earned: 95 points (Tier 1: 60, Tier 2: 25, Tier 3: 10)
+- Deductions: -5 (console errors)
+- **Calculation: (95 - 5) / 100 × 100 = 90%**
+- **Final Grade: 90 (A)**
+
+**Example 2: Good Student with Multiple Issues**
+- Earned: 85 points (Tier 1: 58, Tier 2: 22, Tier 3: 5)
+- Deductions: -12 (-10 crash on interaction, -2 no comments)
+- **Calculation: (85 - 12) / 100 × 100 = 73%**
+- **Final Grade: 73 (C)**
+
+**Example 3: Overachiever with Significant Deductions**
+- Earned: 115 points (Tier 1: 60, Tier 2: 25, Tier 3: 20, Bonus: 10)
+- Deductions: -15 (-10 crash on edge case, -5 missing required feature)
+- **Calculation: (115 - 15) / 100 × 100 = 100%** (capped at 100)
+- **Final Grade: 100 (A+)**
+- *Note: The 15 extra points absorbed the deductions completely*
+
+**Example 4: Struggling Student with Issues**
+- Earned: 45 points (partial Tier 1: 40, Tier 2: 5)
+- Deductions: -10 (-8 console errors, -2 poor organization)
+- **Calculation: (45 - 10) / 100 × 100 = 35%**
+- **Final Grade: 35 (F)**
+
+**Example 5: Minimal Submission with Major Problems**
+- Earned: 30 points (attempted basic structure)
+- Deductions: -25 (-20 doesn't run at all, -5 missing files)
+- **Calculation: (30 - 25) / 100 × 100 = 5%**
+- **Final Grade: 5 (F)**
+
+**Example 6: Non-Functional Submission**
+- Earned: 15 points (some HTML structure visible)
+- Deductions: -40 (-20 doesn't run, -15 crashes immediately, -5 console errors)
+- **Calculation: (15 - 40) = -25**
+- **Final Grade: 0 (F)** *(floored at zero, cannot go negative)*
+
+### Key Takeaway
+
+The 125-point system means:
+- **With 100+ points earned:** Most deductions won't affect your final grade (still 100%)
+- **With 90-99 points earned:** Minor deductions (-5 to -10) keep you in A/B range
+- **With 75-89 points earned:** Deductions (-5 to -15) may drop you one letter grade
+- **With 60-74 points earned:** Deductions can push you toward or into failing
+- **Below 60 points earned:** You're already struggling; deductions make it worse
+
+**Pro Tip:** Focus on earning more points rather than avoiding all deductions. The buffer is your friend!
 
 ---
 
 ## Automatic Deductions
 
-These deductions apply regardless of tier:
+These deductions apply regardless of tier and are subtracted from your total earned points:
 
 ### Critical Issues
 
@@ -473,7 +550,7 @@ These deductions apply regardless of tier:
 
 ### Major Issues
 
-- **-8 pts** - Console errors on page load (per unique error, max -16)
+- **-8 pts** - Console errors on page load (per unique error, max -16 total)
 - **-5 pts** - Feature specified as required but missing entirely
 - **-5 pts** - Significantly non-functional core feature
 
@@ -485,9 +562,39 @@ These deductions apply regardless of tier:
 
 ### Code Quality Issues
 
-- **-3 pts** - Use of `var` instead of `let`/`const`
+- **-3 pts** - Use of `var` instead of `let`/`const` throughout code
 - **-2 pts** - Global namespace pollution (many global variables)
 - **-1 pt** - Inconsistent code formatting
+
+### Maximum Deductions by Category
+
+**Deduction Caps (where applicable):**
+- Console errors: Maximum -16 points (capped at 2 unique errors × 8 pts each)
+- Missing features: -5 points per feature (no cap, but unlikely to exceed -15)
+- Code quality: Maximum -10 points total across all quality issues
+
+**No Overall Deduction Cap:**
+If you have multiple critical issues (e.g., doesn't run + crashes + missing files), deductions can exceed -50 points. However, your final grade will never go below 0.
+
+### Deduction Examples
+
+**Light Deductions (−5 to −10):**
+- Minor console error on load: -8
+- Missing comments: -2
+- **Impact:** Usually one letter grade drop
+
+**Moderate Deductions (−15 to −25):**
+- Crashes on interaction: -10
+- Uses local file: -10
+- Poor organization: -2
+- **Impact:** Can drop 1-2 letter grades
+
+**Heavy Deductions (−30+):**
+- Doesn't run: -20
+- Missing files: -10
+- Console errors: -8
+- No comments: -2
+- **Impact:** Likely failing grade unless you earned 90+ points
 
 ---
 
@@ -572,7 +679,8 @@ You'll receive:
 
 4. **Scoring** (1 min)
    - Tally points from all categories
-   - Calculate final grade (capped at 100)
+   - Apply deductions
+   - Calculate final grade: (earned - deductions) / 100 × 100, capped at 100, floored at 0
    - Add brief feedback notes
 
 ---
@@ -584,6 +692,7 @@ You'll receive:
 - Tier 2: 22/25 (missed one edge case)
 - Tier 3: 10/15 (completed 2 features fully)
 - Bonus: 0
+- Deductions: 0
 - **Total: 90 points = Grade 90 (A)**
 
 ### Example 2: The Overachiever
@@ -591,21 +700,24 @@ You'll receive:
 - Tier 2: 25/25 (perfect)
 - Tier 3: 25/15 (completed 5 advanced features)
 - Bonus: 8 (exceptional UI + code quality)
-- **Total: 118 points = Grade 100 (A+)**
+- Deductions: 0
+- **Total: 118 points = Grade 100 (A+)** *(capped)*
 
 ### Example 3: The Minimum Viable
 - Tier 1: 55/60 (basics work, some bugs)
 - Tier 2: 15/25 (some edge cases handled)
 - Tier 3: 0/15 (no advanced features)
 - Bonus: 0
-- **Total: 70 points = Grade 70 (C)**
+- Deductions: -5 (console errors)
+- **Total: (70 - 5) = 65 points = Grade 65 (D)**
 
 ### Example 4: The Specialist
 - Tier 1: 60/60 (perfect basics)
 - Tier 2: 18/25 (most edge cases)
 - Tier 3: 5/15 (one advanced feature)
 - Bonus: 20 (completed 4 bonus features)
-- **Total: 103 points = Grade 100 (A+)**
+- Deductions: -3 (minor issues)
+- **Total: (103 - 3) = 100 points = Grade 100 (A+)** *(capped)*
 
 ---
 
@@ -672,10 +784,16 @@ The console is your friend - check for errors regularly as you develop.
 ## FAQ
 
 **Q: Can I get more than 100 on my final grade?**  
-A: No, the final grade is capped at 100. However, earning 125 points ensures you get 100 even with small mistakes.
+A: No, the final grade is capped at 100. However, earning 125 points ensures you get 100 even with deductions.
+
+**Q: Can my grade go below zero?**  
+A: No, grades are floored at 0. Even if deductions exceed your earned points, you'll receive a 0, not a negative grade.
 
 **Q: What if I complete only 1 advanced feature?**  
 A: You'll receive 5 points instead of the full 15 for Tier 3. You can make up points through bonus features or exceptional work in other tiers.
+
+**Q: Do deductions apply before or after the 125-point calculation?**  
+A: Deductions are subtracted from your earned points before dividing by 100. So: (earned - deductions) / 100 × 100.
 
 **Q: Do I lose points for styling that's not beautiful?**  
 A: No, as long as it's functional and readable. However, exceptional UI/UX can earn bonus points.
@@ -704,11 +822,13 @@ A: Handle it gracefully in your code - that's part of the exercise. Real-world d
 - Complete requirements in any order
 - Choose your own path to 100 points
 - Earn points beyond 100 for exceptional work
+- Absorb reasonable deductions with the 25-point buffer
 
 **Focus on:**
 - Working, reliable basic functionality
 - Proper edge case handling
 - Clean, understandable code
 - Testing with the provided data
+- Earning more points rather than avoiding all deductions
 
 **Good luck!** 🚀
