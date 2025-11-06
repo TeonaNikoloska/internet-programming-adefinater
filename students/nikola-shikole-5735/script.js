@@ -1,9 +1,8 @@
 // Configuration and constants
 let focusedRowIndex = -1;
-const DATA_URL = '../hugo-books-exam.json'; // Path to the exam data file
 let books = [];
 let filteredBooks = [];
-let currentSort = { column: 'year', ascending: false }; // Default sort by year, newest first
+let currentSort = { column: 'award', ascending: false };
 
 // DOM elements (will be populated when DOM loads)
 let loadingElement, errorElement, tableBody, resultsCount, noResults;
@@ -339,14 +338,6 @@ function clearFocus() {
  * Handle sorting by column
  */
 function handleSort(column) {
-    // TODO: Implement sorting logic
-    // - If clicking same column, toggle direction
-    // - If clicking different column, sort ascending
-    // - Update currentSort object
-    // - Sort filteredBooks array
-    // - Update sort indicators in table headers
-    // - Re-display books
-    
   if (currentSort.column === column) {
     currentSort.ascending = !currentSort.ascending;
   } else {
@@ -442,7 +433,6 @@ function handleFilterChange() {
   }
 
   displayBooks();
-    console.log('Filters changed');
 }
 
 /**
@@ -453,11 +443,6 @@ function clearAllFilters() {
     winnerFilter.value = "all";
     filteredBooks = [...books];
     displayBooks();
-    // TODO: Reset all filter inputs to default values
-    // TODO: Reset filteredBooks to show all books
-    // TODO: Re-display books
-    
-    console.log('Clear filters');
 }
 
 /**
